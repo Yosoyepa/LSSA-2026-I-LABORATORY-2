@@ -90,7 +90,8 @@ def generate_api_gateway(name):
             def gateway(path):
                 for prefix, target in ROUTES.items():
                     if ('/' + path).startswith(prefix):
-                        url = target + '/' + path
+                        sub_path = ('/' + path)[len(prefix):]
+                        url = target + (sub_path if sub_path else prefix)
                         try:
                             resp = requests.request(
                                 method=request.method,
