@@ -30,3 +30,7 @@ ComponentType:
 ConnectorType:
     'data_flow' | 'control_command' | 'event_notification' | 'dependency'
 ;
+
+Comment:
+    /\/\/.*$/
+;
