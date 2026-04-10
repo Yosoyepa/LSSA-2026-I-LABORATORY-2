@@ -384,11 +384,14 @@ def generate_docker_compose(components):
                 f.write(f"      - '{port}:80'\n")
                 
                 if ctype == 'microservice' and db_names:
-                    f.write("    depends_on:\n")
+                    matched_db = None
                     for db in db_names:
                         if db.replace('_db', '') in name:
-                            f.write(f"      - {db}\n")
+                            matched_db = db
                             break
+                    if matched_db:
+                        f.write("    depends_on:\n")
+                        f.write(f"      - {matched_db}\n")
                             
         f.write("\nnetworks:\n  default:\n    driver: bridge\n")
 
