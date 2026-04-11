@@ -1,6 +1,13 @@
 Model:
-    'architecture' ':'
+    'architecture' name=ID ':'
+    systems*=System
     elements*=Element
+;
+
+System:
+    'system' name=ID '{'
+        elements*=Element
+    '}'
 ;
 
 Element:
@@ -21,14 +28,14 @@ TierType:
 
 ComponentType:
     'web_interface' | 'operator_ui' | 'driver_ui' |
-    'api_gateway' |
+    'api_gateway' | 'load_balancer' | 'message_broker' | 'radio_gateway' |
     'microservice' | 'authority_service' |
-    'database' | 'data_lake' |
+    'database' | 'data_lake' | 'event_store' |
     'onboard_unit' | 'sensor' | 'actuator' | 'balise'
 ;
 
 ConnectorType:
-    'data_flow' | 'control_command' | 'event_notification' | 'dependency'
+    'data_flow' | 'control_command' | 'event_notification' | 'dependency' | 'async_event'
 ;
 
 Comment:
