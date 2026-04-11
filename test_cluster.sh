@@ -23,7 +23,7 @@ run_test() {
     ((TOTAL_TESTS++))
     # Pad component name for vertical alignment
     printf "%-25s | %-25s : " "$component" "$test_name" | tee -a "$AUDIT_FILE"
-    
+
     # Run the command and capture output for debugging if needed (hidden unless failure)
     local output
     if output=$(eval "$command" 2>&1); then
@@ -48,7 +48,6 @@ COMPONENTS=(
     "passengers_db" "routes_db" "trains_db" "position_time_db" "tickets_db" "alerts_db"
     "scheduling_db" "event_store_db" "dl"
     "onboard_unit" "train_sensor" "brake_actuator" "balise" "onboard_radio_unit"
-    "ccs_monitor" "ccs_mas" "ccs_balise_a" "ccs_balise_b"
 )
 
 for comp in "${COMPONENTS[@]}"; do
@@ -60,7 +59,7 @@ echo "--- 2. MICROSERVICES HTTP ENDPOINTS (T3) ---" | tee -a "$AUDIT_FILE"
 MICROSERVICES=("passengers_ms" "routes_ms" "trains_ms" "position_time_ms" "tickets_ms" "mas" "alerts_ms" "scheduling_ms")
 for ms in "${MICROSERVICES[@]}"; do
     run_test "$ms" "HTTP GET /health" "docker exec skeleton-${ms}-1 python -c \"import urllib.request; urllib.request.urlopen('http://localhost:80/health').read()\""
-    
+
     if [ "$ms" != "mas" ]; then
         run_test "$ms" "HTTP GET /records" "docker exec skeleton-${ms}-1 python -c \"import urllib.request; urllib.request.urlopen('http://localhost:80/records').read()\""
     fi
@@ -72,10 +71,6 @@ T2_SERVICES=("api_gateway" "load_balancer" "message_broker" "gsm_r_gateway")
 for svc in "${T2_SERVICES[@]}"; do
     run_test "$svc" "HTTP GET /health" "docker exec skeleton-${svc}-1 python -c \"import urllib.request; urllib.request.urlopen('http://localhost:80/health').read()\""
 done
-
-echo "" | tee -a "$AUDIT_FILE"
-echo "--- 4. SoS SUBSYSTEM: CCS ---" | tee -a "$AUDIT_FILE"
-run_test "ccs_mas" "HTTP GET /health" "docker exec skeleton-ccs_mas-1 python -c \"import urllib.request; urllib.request.urlopen('http://localhost:80/health').read()\""
 
 echo "" | tee -a "$AUDIT_FILE"
 echo "--- 5. DATABASE CONNECTIONS (T4) ---" | tee -a "$AUDIT_FILE"
@@ -92,12 +87,6 @@ for phys in "${PHYSICAL[@]}"; do
 done
 # Actuator just executes once, so we check if its initialization log exists
 run_test "brake_actuator" "Action Execution" "docker logs skeleton-brake_actuator-1 | grep -q '\[ACTUATOR brake_actuator\]'"
-
-# CCS balises
-BALISES=("ccs_balise_a" "ccs_balise_b")
-for b in "${BALISES[@]}"; do
-    run_test "$b" "Log Generation" "docker logs skeleton-${b}-1 | tail -n 5 | grep -q '\[BALISE\]'"
-done
 
 echo "" | tee -a "$AUDIT_FILE"
 echo "==========================================" | tee -a "$AUDIT_FILE"

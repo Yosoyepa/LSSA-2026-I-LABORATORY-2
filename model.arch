@@ -1,26 +1,4 @@
 architecture ERTMS_SoS:
-
-// ============================================================
-// SoS Subsystem: CCS (Command Control & Signalling)
-// Demonstrates operational and managerial independence
-// ============================================================
-system CCS {
-    // T1 Presentation — CCS Monitoring
-    component presentation operator_ui ccs_monitor
-
-    // T3 Logic — CCS Core
-    component logic authority_service ccs_mas
-
-    // T5 Physical — CCS Field Devices
-    component physical balise ccs_balise_a
-    component physical balise ccs_balise_b
-
-    // Internal CCS Connectors
-    connector data_flow ccs_balise_a -> ccs_mas
-    connector data_flow ccs_balise_b -> ccs_mas
-    connector data_flow ccs_monitor -> ccs_mas
-}
-
 // ============================================================
 // Main ERTMS Architecture (Global elements)
 // ============================================================

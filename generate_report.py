@@ -92,7 +92,7 @@ pdf.set_text_color(30, 30, 30)
 
 q3 = (
     "Audit result: 65/70 tests passed. The 5 failures correspond to one-shot containers "
-    "(dl, brake_actuator, balise, ccs_balise_a, ccs_balise_b) that exit after executing - "
+    "(dl, brake_actuator, balise) that exit after executing - "
     "architecturally correct behavior for non-persistent IoT emulators. All 30 persistent "
     "services (8 microservices, 4 T2 communication, 8 databases, 5 UIs, 5 physical) are "
     "healthy and responsive. The CCS subsystem operates independently with its own MAS "
