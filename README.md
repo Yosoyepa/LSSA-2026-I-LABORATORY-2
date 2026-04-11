@@ -29,7 +29,7 @@ chmod +x nombre_del_script.sh
 ./nombre_del_script.sh
 ```
 
-Ejecutar estos scripts en orden:
+Ejecutar estos scripts en orden en la raíz del proyecto:
 
 ```
 ./run_cluster.sh
@@ -44,5 +44,6 @@ Ejecutar estos scripts en orden:
 ## Detener el Sistema
 
 ```bash
+# Ejecutar en skeleton/
 docker-compose down -v
 ```
