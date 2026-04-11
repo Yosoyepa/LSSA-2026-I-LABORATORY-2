@@ -10,7 +10,13 @@ ROUTES = {
     '/position': 'http://position_time_ms:80',
     '/tickets': 'http://tickets_ms:80',
     '/authority': 'http://mas:80',
+    '/alerts': 'http://alerts_ms:80',
+    '/scheduling': 'http://scheduling_ms:80',
 }
+
+@app.route('/health')
+def health():
+    return jsonify(status='ok', service='api_gateway')
 
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def gateway(path):

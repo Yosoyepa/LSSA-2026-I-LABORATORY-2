@@ -36,6 +36,42 @@ services:
       - ./position_time_db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - '3309:3306'
+  tickets_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=tickets_db
+    volumes:
+      - ./tickets_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3310:3306'
+  alerts_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=alerts_db
+    volumes:
+      - ./alerts_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3311:3306'
+  scheduling_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=scheduling_db
+    volumes:
+      - ./scheduling_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3312:3306'
+  event_store_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=event_store_db
+    volumes:
+      - ./event_store_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3313:3306'
   dl:
     image: python:3.11-slim
     volumes:
@@ -66,54 +102,114 @@ services:
       - ./balise:/app
     working_dir: /app
     command: python balise.py
+  onboard_radio_unit:
+    image: python:3.11-slim
+    volumes:
+      - ./onboard_radio_unit:/app
+    working_dir: /app
+    command: python obu.py
+  ccs_balise_a:
+    image: python:3.11-slim
+    volumes:
+      - ./ccs_balise_a:/app
+    working_dir: /app
+    command: python balise.py
+  ccs_balise_b:
+    image: python:3.11-slim
+    volumes:
+      - ./ccs_balise_b:/app
+    working_dir: /app
+    command: python balise.py
   passengers_ms:
     build: ./passengers_ms
     ports:
-      - '8009:80'
+      - '8016:80'
     depends_on:
       - passengers_db
   routes_ms:
     build: ./routes_ms
     ports:
-      - '8010:80'
+      - '8017:80'
     depends_on:
       - routes_db
   trains_ms:
     build: ./trains_ms
     ports:
-      - '8011:80'
+      - '8018:80'
     depends_on:
       - trains_db
   position_time_ms:
     build: ./position_time_ms
     ports:
-      - '8012:80'
+      - '8019:80'
     depends_on:
       - position_time_db
   tickets_ms:
     build: ./tickets_ms
     ports:
-      - '8013:80'
+      - '8020:80'
+    depends_on:
+      - tickets_db
   mas:
     build: ./mas
     ports:
-      - '8014:80'
+      - '8021:80'
+  alerts_ms:
+    build: ./alerts_ms
+    ports:
+      - '8022:80'
+    depends_on:
+      - alerts_db
+  scheduling_ms:
+    build: ./scheduling_ms
+    ports:
+      - '8023:80'
+    depends_on:
+      - scheduling_db
+  ccs_mas:
+    build: ./ccs_mas
+    ports:
+      - '8024:80'
   api_gateway:
     build: ./api_gateway
     ports:
-      - '8015:80'
+      - '8025:80'
+  load_balancer:
+    build: ./load_balancer
+    ports:
+      - '8026:80'
+  message_broker:
+    build: ./message_broker
+    ports:
+      - '8027:80'
+  gsm_r_gateway:
+    build: ./gsm_r_gateway
+    ports:
+      - '8028:80'
   portal:
     build: ./portal
     ports:
-      - '8016:80'
+      - '8029:80'
   dashboard:
     build: ./dashboard
     ports:
-      - '8017:80'
+      - '8030:80'
   driver_interface:
     build: ./driver_interface
     ports:
-      - '8018:80'
+      - '8031:80'
+  mobile_app:
+    build: ./mobile_app
+    ports:
+      - '8032:80'
+  maintenance_console:
+    build: ./maintenance_console
+    ports:
+      - '8033:80'
+  ccs_monitor:
+    build: ./ccs_monitor
+    ports:
+      - '8034:80'
 
 networks:
   default:

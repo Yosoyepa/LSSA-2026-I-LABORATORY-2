@@ -5,15 +5,15 @@ app = Flask(__name__)
 
 def get_conn():
     return mysql.connector.connect(
-        host='tickets_db',
+        host='alerts_db',
         user='root',
         password='root',
-        database='tickets_db'
+        database='alerts_db'
     )
 
 @app.route('/health')
 def health():
-    return jsonify(status='ok', service='tickets_ms')
+    return jsonify(status='ok', service='alerts_ms')
 
 @app.route('/records')
 def get_records():
