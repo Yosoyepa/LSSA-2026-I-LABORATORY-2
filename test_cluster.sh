@@ -46,8 +46,8 @@ COMPONENTS=(
     "passengers_ms" "routes_ms" "trains_ms" "position_time_ms" "tickets_ms" "mas"
     "alerts_ms" "scheduling_ms"
     "passengers_db" "routes_db" "trains_db" "position_time_db" "tickets_db" "alerts_db"
-    "scheduling_db" "event_store_db" "dl"
-    "onboard_unit" "train_sensor" "brake_actuator" "balise" "onboard_radio_unit"
+    "scheduling_db" "event_store_db"
+    "onboard_unit" "train_sensor" "onboard_radio_unit"
 )
 
 for comp in "${COMPONENTS[@]}"; do
