@@ -1,12 +1,42 @@
-architecture:
+architecture ERTMS_SoS:
+
+// ============================================================
+// SoS Subsystem: CCS (Command Control & Signalling)
+// Demonstrates operational and managerial independence
+// ============================================================
+system CCS {
+    // T1 Presentation — CCS Monitoring
+    component presentation operator_ui ccs_monitor
+
+    // T3 Logic — CCS Core
+    component logic authority_service ccs_mas
+
+    // T5 Physical — CCS Field Devices
+    component physical balise ccs_balise_a
+    component physical balise ccs_balise_b
+
+    // Internal CCS Connectors
+    connector data_flow ccs_balise_a -> ccs_mas
+    connector data_flow ccs_balise_b -> ccs_mas
+    connector data_flow ccs_monitor -> ccs_mas
+}
+
+// ============================================================
+// Main ERTMS Architecture (Global elements)
+// ============================================================
 
 // T1 Presentation
 component presentation web_interface portal
 component presentation operator_ui dashboard
 component presentation driver_ui driver_interface
+component presentation web_interface mobile_app
+component presentation operator_ui maintenance_console
 
 // T2 Communication
 component communication api_gateway api_gateway
+component communication load_balancer load_balancer
+component communication message_broker message_broker
+component communication radio_gateway gsm_r_gateway
 
 // T3 Logic
 component logic microservice passengers_ms
@@ -15,12 +45,18 @@ component logic microservice trains_ms
 component logic microservice position_time_ms
 component logic microservice tickets_ms
 component logic authority_service mas
+component logic microservice alerts_ms
+component logic microservice scheduling_ms
 
 // T4 Data
 component data database passengers_db
 component data database routes_db
 component data database trains_db
 component data database position_time_db
+component data database tickets_db
+component data database alerts_db
+component data database scheduling_db
+component data event_store event_store_db
 component data data_lake dl
 
 // T5 Physical
@@ -28,38 +64,103 @@ component physical onboard_unit onboard_unit
 component physical sensor train_sensor
 component physical actuator brake_actuator
 component physical balise balise
+component physical onboard_unit onboard_radio_unit
 
-// Connectors T1 T2
+// ============================================================
+// Connectors T1 -> T2 (Presentation to Communication)
+// ============================================================
 connector data_flow portal -> api_gateway
 connector data_flow dashboard -> api_gateway
 connector data_flow driver_interface -> api_gateway
+connector data_flow mobile_app -> api_gateway
+connector data_flow maintenance_console -> api_gateway
 
-// Connectors T2 T3
+// T1 -> T2 via Load Balancer
+connector data_flow portal -> load_balancer
+connector data_flow dashboard -> load_balancer
+connector data_flow mobile_app -> load_balancer
+
+// ============================================================
+// Connectors T2 -> T3 (Communication to Logic)
+// ============================================================
 connector data_flow api_gateway -> passengers_ms
 connector data_flow api_gateway -> routes_ms
 connector data_flow api_gateway -> trains_ms
 connector data_flow api_gateway -> position_time_ms
 connector data_flow api_gateway -> tickets_ms
 connector data_flow api_gateway -> mas
+connector data_flow api_gateway -> alerts_ms
+connector data_flow api_gateway -> scheduling_ms
 
-// Connectors T3 T4
+// Load Balancer -> microservices
+connector data_flow load_balancer -> passengers_ms
+connector data_flow load_balancer -> routes_ms
+connector data_flow load_balancer -> trains_ms
+
+// GSM-R Gateway bridges T2 <-> T5
+connector data_flow gsm_r_gateway -> onboard_unit
+connector data_flow gsm_r_gateway -> onboard_radio_unit
+
+// ============================================================
+// Connectors T3 -> T4 (Logic to Data)
+// ============================================================
 connector dependency passengers_ms -> passengers_db
 connector dependency routes_ms -> routes_db
 connector dependency trains_ms -> trains_db
 connector dependency position_time_ms -> position_time_db
+connector dependency tickets_ms -> tickets_db
+connector dependency alerts_ms -> alerts_db
+connector dependency scheduling_ms -> scheduling_db
 connector data_flow position_time_ms -> dl
 
-// Connectors T3 intra-tier
+// Event sourcing: MAS -> Event Store
+connector dependency mas -> event_store_db
+
+// Data Lake ingestion from all databases
+connector data_flow passengers_db -> dl
+connector data_flow routes_db -> dl
+connector data_flow trains_db -> dl
+connector data_flow tickets_db -> dl
+connector data_flow alerts_db -> dl
+
+// ============================================================
+// Connectors T3 intra-tier (Logic coordination)
+// ============================================================
 connector data_flow mas -> position_time_ms
 connector data_flow mas -> routes_ms
+connector data_flow passengers_ms -> tickets_ms
+connector data_flow trains_ms -> routes_ms
+connector data_flow scheduling_ms -> routes_ms
+connector data_flow scheduling_ms -> trains_ms
+connector data_flow alerts_ms -> mas
 
-// Connectors T5 T3
+// Async events via Message Broker
+connector async_event passengers_ms -> message_broker
+connector async_event trains_ms -> message_broker
+connector async_event alerts_ms -> message_broker
+connector async_event message_broker -> scheduling_ms
+connector async_event message_broker -> alerts_ms
+
+// ============================================================
+// Connectors T5 -> T3 (Physical to Logic)
+// ============================================================
 connector event_notification train_sensor -> onboard_unit
 connector data_flow onboard_unit -> position_time_ms
+connector data_flow onboard_radio_unit -> position_time_ms
 
-// Connectors T3 T5
+// ============================================================
+// Connectors T3 -> T5 (Logic to Physical)
+// ============================================================
 connector control_command mas -> onboard_unit
+connector control_command mas -> onboard_radio_unit
 connector control_command onboard_unit -> brake_actuator
 
-// Connectors T5 intra-tier
+// ============================================================
+// Connectors T5 intra-tier (Physical layer)
+// ============================================================
 connector data_flow balise -> onboard_unit
+connector data_flow balise -> onboard_radio_unit
+connector event_notification train_sensor -> onboard_radio_unit
+
+// T2 -> T5 via GSM-R (radio communication)
+connector data_flow onboard_radio_unit -> gsm_r_gateway
