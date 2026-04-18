@@ -1,0 +1,230 @@
+architecture ERTMS_SoS:
+
+// ============================================================
+// Main ERTMS Architecture (Global elements)
+// ============================================================
+
+// T1 Presentation
+component presentation web_interface portal
+{ availability: standard performance: interactive security: public }
+
+component presentation operator_ui dashboard
+{ availability: high performance: interactive security: internal }
+
+component presentation driver_ui driver_interface
+{ availability: critical performance: realtime security: restricted }
+
+component presentation web_interface mobile_app
+{ availability: standard performance: interactive security: public }
+
+component presentation operator_ui maintenance_console
+{ availability: high performance: interactive security: internal }
+
+// T2 Communication
+component communication api_gateway api_gateway
+{ availability: critical performance: realtime security: restricted replicas: 2 mem_limit: "256m" cpu_limit: 0.5 }
+
+component communication load_balancer load_balancer
+{ availability: critical performance: realtime security: restricted replicas: 2 mem_limit: "256m" cpu_limit: 0.5 }
+
+component communication message_broker message_broker
+{ availability: critical performance: realtime security: internal mem_limit: "512m" cpu_limit: 1.0 }
+
+component communication radio_gateway gsm_r_gateway
+{ availability: critical performance: realtime security: restricted mem_limit: "256m" cpu_limit: 0.5 }
+
+// T3 Logic
+component logic microservice passengers_ms
+{ availability: standard performance: interactive security: internal mem_limit: "128m" cpu_limit: 0.25 }
+
+component logic microservice routes_ms
+{ availability: standard performance: interactive security: internal mem_limit: "128m" cpu_limit: 0.25 }
+
+component logic microservice trains_ms
+{ availability: standard performance: interactive security: internal mem_limit: "128m" cpu_limit: 0.25 }
+
+component logic microservice position_time_ms
+{ availability: critical performance: realtime security: restricted mem_limit: "512m" cpu_limit: 1.0 }
+
+component logic microservice tickets_ms
+{ availability: standard performance: interactive security: internal mem_limit: "128m" cpu_limit: 0.25 }
+
+component logic authority_service mas
+{ availability: critical performance: realtime security: restricted mem_limit: "512m" cpu_limit: 1.0 }
+
+component logic microservice alerts_ms
+{ availability: high performance: interactive security: internal mem_limit: "256m" cpu_limit: 0.5 }
+
+component logic microservice scheduling_ms
+{ availability: high performance: interactive security: internal mem_limit: "256m" cpu_limit: 0.5 }
+
+// T4 Data
+component data database passengers_db
+{ availability: high security: internal }
+
+component data database routes_db
+{ availability: high security: internal }
+
+component data database trains_db
+{ availability: high security: internal }
+
+component data database position_time_db
+{ availability: critical security: restricted }
+
+component data database tickets_db
+{ availability: high security: internal }
+
+component data database alerts_db
+{ availability: high security: internal }
+
+component data database scheduling_db
+{ availability: high security: internal }
+
+component data event_store event_store_db
+{ availability: critical security: restricted }
+
+component data data_lake dl
+{ availability: standard security: internal }
+
+// T5 Physical
+component physical onboard_unit onboard_unit
+{ availability: critical performance: realtime security: restricted }
+
+component physical sensor train_sensor
+{ availability: critical performance: realtime security: restricted }
+
+component physical actuator brake_actuator
+{ availability: critical performance: realtime security: restricted }
+
+component physical balise balise
+{ availability: critical performance: realtime security: restricted }
+
+component physical onboard_unit onboard_radio_unit
+{ availability: critical performance: realtime security: restricted }
+
+// ============================================================
+// Connectors T1 -> T2 (Presentation to Communication)
+// ============================================================
+connector data_flow portal -> api_gateway
+{ encrypted: false rate_limit: 100 }
+
+connector data_flow dashboard -> api_gateway
+{ encrypted: false rate_limit: 200 }
+
+connector data_flow driver_interface -> api_gateway
+{ timeout_ms: 500 encrypted: true rate_limit: 50 }
+
+connector data_flow mobile_app -> api_gateway
+{ encrypted: false rate_limit: 100 }
+
+connector data_flow maintenance_console -> api_gateway
+{ encrypted: true rate_limit: 50 }
+
+// T1 -> T2 via Load Balancer
+connector data_flow portal -> load_balancer
+connector data_flow dashboard -> load_balancer
+connector data_flow mobile_app -> load_balancer
+
+// ============================================================
+// Connectors T2 -> T3 (Communication to Logic)
+// ============================================================
+connector data_flow api_gateway -> passengers_ms
+{ timeout_ms: 3000 }
+connector data_flow api_gateway -> routes_ms
+{ timeout_ms: 3000 }
+connector data_flow api_gateway -> trains_ms
+{ timeout_ms: 3000 }
+connector data_flow api_gateway -> position_time_ms
+{ timeout_ms: 500 encrypted: true }
+connector data_flow api_gateway -> tickets_ms
+{ timeout_ms: 3000 }
+connector data_flow api_gateway -> mas
+{ timeout_ms: 500 encrypted: true }
+connector data_flow api_gateway -> alerts_ms
+{ timeout_ms: 2000 }
+connector data_flow api_gateway -> scheduling_ms
+{ timeout_ms: 3000 }
+
+// Load Balancer -> microservices
+connector data_flow load_balancer -> passengers_ms
+connector data_flow load_balancer -> routes_ms
+connector data_flow load_balancer -> trains_ms
+
+// GSM-R Gateway bridges T2 <-> T5
+connector data_flow gsm_r_gateway -> onboard_unit
+{ timeout_ms: 500 encrypted: true }
+connector data_flow gsm_r_gateway -> onboard_radio_unit
+{ timeout_ms: 500 encrypted: true }
+
+// ============================================================
+// Connectors T3 -> T4 (Logic to Data)
+// ============================================================
+connector dependency passengers_ms -> passengers_db
+connector dependency routes_ms -> routes_db
+connector dependency trains_ms -> trains_db
+connector dependency position_time_ms -> position_time_db
+connector dependency tickets_ms -> tickets_db
+connector dependency alerts_ms -> alerts_db
+connector dependency scheduling_ms -> scheduling_db
+connector data_flow position_time_ms -> dl
+
+// Event sourcing: MAS -> Event Store
+connector dependency mas -> event_store_db
+
+// Data Lake ingestion from all databases
+connector data_flow passengers_db -> dl
+connector data_flow routes_db -> dl
+connector data_flow trains_db -> dl
+connector data_flow tickets_db -> dl
+connector data_flow alerts_db -> dl
+
+// ============================================================
+// Connectors T3 intra-tier (Logic coordination)
+// ============================================================
+connector data_flow mas -> position_time_ms
+{ timeout_ms: 300 encrypted: true }
+connector data_flow mas -> routes_ms
+{ timeout_ms: 500 }
+connector data_flow passengers_ms -> tickets_ms
+connector data_flow trains_ms -> routes_ms
+connector data_flow scheduling_ms -> routes_ms
+connector data_flow scheduling_ms -> trains_ms
+connector data_flow alerts_ms -> mas
+{ timeout_ms: 500 encrypted: true }
+
+// Async events via Message Broker
+connector async_event passengers_ms -> message_broker
+connector async_event trains_ms -> message_broker
+connector async_event alerts_ms -> message_broker
+connector async_event message_broker -> scheduling_ms
+connector async_event message_broker -> alerts_ms
+
+// ============================================================
+// Connectors T5 -> T3 (Physical to Logic)
+// ============================================================
+connector event_notification train_sensor -> onboard_unit
+connector data_flow onboard_unit -> position_time_ms
+{ timeout_ms: 200 encrypted: true }
+connector data_flow onboard_radio_unit -> position_time_ms
+{ timeout_ms: 200 encrypted: true }
+
+// ============================================================
+// Connectors T3 -> T5 (Logic to Physical)
+// ============================================================
+connector control_command mas -> onboard_unit
+{ timeout_ms: 200 encrypted: true }
+connector control_command mas -> onboard_radio_unit
+{ timeout_ms: 200 encrypted: true }
+connector control_command onboard_unit -> brake_actuator
+{ timeout_ms: 100 }
+
+// ============================================================
+// Connectors T5 intra-tier (Physical layer)
+// ============================================================
+connector data_flow balise -> onboard_unit
+connector data_flow balise -> onboard_radio_unit
+connector event_notification train_sensor -> onboard_radio_unit
+
+// T2 -> T5 via GSM-R (radio communication)
+connector data_flow onboard_radio_unit -> gsm_r_gateway
+{ timeout_ms: 500 encrypted: true }
