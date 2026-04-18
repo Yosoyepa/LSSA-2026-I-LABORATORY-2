@@ -1,0 +1,196 @@
+version: '3.8'
+services:
+  passengers_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=passengers_db
+    volumes:
+      - ./passengers_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3306:3306'
+  routes_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=routes_db
+    volumes:
+      - ./routes_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3307:3306'
+  trains_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=trains_db
+    volumes:
+      - ./trains_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3308:3306'
+  position_time_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=position_time_db
+    volumes:
+      - ./position_time_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3309:3306'
+  tickets_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=tickets_db
+    volumes:
+      - ./tickets_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3310:3306'
+  alerts_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=alerts_db
+    volumes:
+      - ./alerts_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3311:3306'
+  scheduling_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=scheduling_db
+    volumes:
+      - ./scheduling_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3312:3306'
+  event_store_db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=event_store_db
+    volumes:
+      - ./event_store_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '3313:3306'
+  dl:
+    image: python:3.11-slim
+    volumes:
+      - ./dl:/app
+    working_dir: /app
+    command: python ingest.py
+  onboard_unit:
+    image: python:3.11-slim
+    volumes:
+      - ./onboard_unit:/app
+    working_dir: /app
+    command: python obu.py
+  train_sensor:
+    image: python:3.11-slim
+    volumes:
+      - ./train_sensor:/app
+    working_dir: /app
+    command: python sensor.py
+  brake_actuator:
+    image: python:3.11-slim
+    volumes:
+      - ./brake_actuator:/app
+    working_dir: /app
+    command: python actuator.py
+  balise:
+    image: python:3.11-slim
+    volumes:
+      - ./balise:/app
+    working_dir: /app
+    command: python balise.py
+  onboard_radio_unit:
+    image: python:3.11-slim
+    volumes:
+      - ./onboard_radio_unit:/app
+    working_dir: /app
+    command: python obu.py
+  passengers_ms:
+    build: ./passengers_ms
+    ports:
+      - '8014:80'
+    depends_on:
+      - passengers_db
+  routes_ms:
+    build: ./routes_ms
+    ports:
+      - '8015:80'
+    depends_on:
+      - routes_db
+  trains_ms:
+    build: ./trains_ms
+    ports:
+      - '8016:80'
+    depends_on:
+      - trains_db
+  position_time_ms:
+    build: ./position_time_ms
+    ports:
+      - '8017:80'
+    depends_on:
+      - position_time_db
+  tickets_ms:
+    build: ./tickets_ms
+    ports:
+      - '8018:80'
+    depends_on:
+      - tickets_db
+  mas:
+    build: ./mas
+    ports:
+      - '8019:80'
+  alerts_ms:
+    build: ./alerts_ms
+    ports:
+      - '8020:80'
+    depends_on:
+      - alerts_db
+  scheduling_ms:
+    build: ./scheduling_ms
+    ports:
+      - '8021:80'
+    depends_on:
+      - scheduling_db
+  api_gateway:
+    build: ./api_gateway
+    ports:
+      - '8022:80'
+  load_balancer:
+    build: ./load_balancer
+    ports:
+      - '8023:80'
+  message_broker:
+    build: ./message_broker
+    ports:
+      - '8024:80'
+  gsm_r_gateway:
+    build: ./gsm_r_gateway
+    ports:
+      - '8025:80'
+  portal:
+    build: ./portal
+    ports:
+      - '8026:80'
+  dashboard:
+    build: ./dashboard
+    ports:
+      - '8027:80'
+  driver_interface:
+    build: ./driver_interface
+    ports:
+      - '8028:80'
+  mobile_app:
+    build: ./mobile_app
+    ports:
+      - '8029:80'
+  maintenance_console:
+    build: ./maintenance_console
+    ports:
+      - '8030:80'
+
+networks:
+  default:
+    driver: bridge
